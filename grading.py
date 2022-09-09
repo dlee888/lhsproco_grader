@@ -21,20 +21,6 @@ async def run(cmd, **kwargs):
     stdout = str(stdout, 'utf-8')
     stderr = str(stderr, 'utf-8')
 
-    # print(f'Done running {cmd}\n{stdout}\n{stderr}')
-
-    return proc.returncode
-
-
-async def run2(cmd, **kwargs):
-    proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE,
-                                                 stderr=asyncio.subprocess.PIPE, **kwargs)
-
-    stdout, stderr = await proc.communicate()
-
-    stdout = str(stdout, 'utf-8')
-    stderr = str(stderr, 'utf-8')
-
     return proc.returncode, stdout, stderr
 
 
@@ -42,7 +28,7 @@ async def time_cmd(cmd, time_limit, **kwargs):
     # print('Timing', cmd)
     try:
         starttime = time.time()
-        code, stdout, stderr = await asyncio.wait_for(run2(cmd, **kwargs), timeout=time_limit)
+        code, stdout, stderr = await asyncio.wait_for(run(cmd, **kwargs), timeout=time_limit)
         return code, stdout, stderr, time.time() - starttime
     except asyncio.TimeoutError:
         return None, None, None, time_limit
@@ -67,20 +53,20 @@ async def grade_problem(problem_id, lang, request_id):
         program_dir, constants.LANG_FILENAMES[lang].split('.')[0])
 
     if lang == 'C++':
-        comp, stdout, stderr = await run2(f'g++ {sol_file} -o {sol_without_ext} -O2 -lm -std=c++17')
+        comp, stdout, stderr = await run(f'g++ {sol_file} -o {sol_without_ext} -O2 -lm -std=c++17')
         # print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
         if comp != 0:
             return [f'Compile error: {stderr}'], 0
     elif lang == 'C':
-        comp, stdout, stderr = await run2(f'gcc {sol_file} -o {sol_without_ext} -O2')
+        comp, stdout, stderr = await run(f'gcc {sol_file} -o {sol_without_ext} -O2')
         # print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
         if comp != 0:
             return [f'Compile error: {stderr}'], 0
     elif lang == 'Java':
-        comp, stdout, stderr = await run2(f'javac {sol_file} -d {program_dir}')
+        comp, stdout, stderr = await run(f'javac {sol_file} -d {program_dir}')
         print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
         if comp != 0:
-            return [f'Compile error: {stderr}'], 0
+            return {'result': 'Compile error', 'stderr': stderr}, 0
 
     result = []
     marks = 0
@@ -100,7 +86,7 @@ async def grade_problem(problem_id, lang, request_id):
             # print(code, stdout, stderr)
             result.append({'result': 'Runtime error', 'time': runtime})
         else:
-            diff = await run(f'diff -w {answer_file} {output_file}')
+            diff, _, _ = await run(f'diff -w {answer_file} {output_file}')
             if diff != 0:
                 result.append({'result': 'Wrong answer', 'time': runtime})
             else:
