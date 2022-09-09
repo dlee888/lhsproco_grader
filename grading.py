@@ -1,13 +1,20 @@
 import asyncio
 import os
+import resource
+import time
 
 import constants
 import problems
 
 
-async def run(cmd):
+def limit_virtual_memory():
+    resource.setrlimit(resource.RLIMIT_AS,
+                       (constants.MEMORY_LIMIT, constants.MEMORY_LIMIT))
+
+
+async def run(cmd, **kwargs):
     proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE,
-                                                 stderr=asyncio.subprocess.PIPE)
+                                                 stderr=asyncio.subprocess.PIPE, **kwargs)
 
     stdout, stderr = await proc.communicate()
 
@@ -19,9 +26,9 @@ async def run(cmd):
     return proc.returncode
 
 
-async def run2(cmd):
+async def run2(cmd, **kwargs):
     proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE,
-                                                 stderr=asyncio.subprocess.PIPE)
+                                                 stderr=asyncio.subprocess.PIPE, **kwargs)
 
     stdout, stderr = await proc.communicate()
 
@@ -31,21 +38,23 @@ async def run2(cmd):
     return proc.returncode, stdout, stderr
 
 
-async def time(cmd, time_limit):
+async def time_cmd(cmd, time_limit, **kwargs):
     # print('Timing', cmd)
     try:
-        return await asyncio.wait_for(run2(cmd), timeout=time_limit)
+        starttime = time.time()
+        code, stdout, stderr = await asyncio.wait_for(run2(cmd, **kwargs), timeout=time_limit)
+        return code, stdout, stderr, time.time() - starttime
     except asyncio.TimeoutError:
-        return None
+        return None, None, None, time_limit
 
 
 async def grade_case(program_dir, input_file, output_file, lang):
     if lang == 'C++' or lang == 'C':
-        return await time(f'./{program_dir}/main < {input_file} > {output_file}', constants.TIME_LIMITS[lang])
+        return await time_cmd(f'./{program_dir}/main < {input_file} > {output_file}', constants.TIME_LIMITS[lang], preexec_fn=limit_virtual_memory)
     elif lang == 'Python':
-        return await time(f'python {program_dir}/main.py < {input_file} > {output_file}', constants.TIME_LIMITS[lang])
+        return await time_cmd(f'python {program_dir}/main.py < {input_file} > {output_file}', constants.TIME_LIMITS[lang], preexec_fn=limit_virtual_memory)
     elif lang == 'Java':
-        return await time(f'java -cp {program_dir} Main < {input_file} > {output_file}', constants.TIME_LIMITS[lang])
+        return await time_cmd(f'java -Xmx512m -cp {program_dir} Main < {input_file} > {output_file}', constants.TIME_LIMITS[lang])
 
 
 async def grade_problem(problem_id, lang, request_id):
@@ -58,7 +67,7 @@ async def grade_problem(problem_id, lang, request_id):
         program_dir, constants.LANG_FILENAMES[lang].split('.')[0])
 
     if lang == 'C++':
-        comp, stdout, stderr = await run2(f'g++ {sol_file} -o {sol_without_ext} -O2')
+        comp, stdout, stderr = await run2(f'g++ {sol_file} -o {sol_without_ext} -O2 -lm -std=c++17')
         # print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
         if comp != 0:
             return [f'Compile error: {stderr}'], 0
@@ -69,7 +78,7 @@ async def grade_problem(problem_id, lang, request_id):
             return [f'Compile error: {stderr}'], 0
     elif lang == 'Java':
         comp, stdout, stderr = await run2(f'javac {sol_file} -d {program_dir}')
-        # print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
+        print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
         if comp != 0:
             return [f'Compile error: {stderr}'], 0
 
@@ -83,19 +92,19 @@ async def grade_problem(problem_id, lang, request_id):
         output_file = os.path.join(
             program_dir, f'output_{request_id}_{i + 1}.out')
 
-        code, stdout, stderr = await grade_case(program_dir, input_file, output_file, lang)
+        code, stdout, stderr, runtime = await grade_case(program_dir, input_file, output_file, lang)
 
         if code == None:
-            result.append('Time Limit Exceeded')
+            result.append({'result': 'Time Limit Exceeded', 'time': runtime})
         elif code != 0:
             # print(code, stdout, stderr)
-            result.append('Runtime error')
+            result.append({'result': 'Runtime error', 'time': runtime})
         else:
             diff = await run(f'diff -w {answer_file} {output_file}')
             if diff != 0:
-                result.append('Wrong answer')
+                result.append({'result': 'Wrong answer', 'time': runtime})
             else:
-                result.append('Correct')
+                result.append({'result': 'Correct', 'time': runtime})
                 marks += 1
 
     return result, marks / problem.test_cases
