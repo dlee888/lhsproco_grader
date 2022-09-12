@@ -1,7 +1,7 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
 FROM python:3.8-slim
 
-EXPOSE 8000
+EXPOSE 6969
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -28,5 +28,6 @@ RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /
 USER appuser
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-RUN ls
-CMD ["gunicorn", "--bind", "0.0.0.0:6969", "-k", "uvicorn.workers.UvicornWorker", "api:api"]
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "6969"]
+
+# To test locally, run `docker build -t api .` and then `docker run -p 6969:6969 api`

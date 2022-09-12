@@ -43,9 +43,8 @@ async def grade_case(program_dir, input_file, output_file, lang):
         return await time_cmd(f'java -Xmx{constants.MEMORY_LIMIT} -cp {program_dir} Main < {input_file} > {output_file}', constants.TIME_LIMITS[lang])
 
 
-async def grade_problem(problem_id, lang, request_id):
-    problem = problems.problem_list[problem_id]
-    program = f'request_{request_id}'
+async def grade_problem(program, event_id, problem_id, lang):
+    problem = problems.events_list[event_id].get_problem(problem_id)
     program_dir = os.path.join(constants.TEMP_DIR, program)
     sol_file = os.path.join(
         program_dir, constants.LANG_FILENAMES[lang])
@@ -56,12 +55,12 @@ async def grade_problem(problem_id, lang, request_id):
         comp, stdout, stderr = await run(f'g++ {sol_file} -o {sol_without_ext} -O2 -lm -std=c++17')
         # print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
         if comp != 0:
-            return [f'Compile error: {stderr}'], 0
+            return {'result': 'Compile error', 'stderr': stderr}, 0
     elif lang == 'C':
         comp, stdout, stderr = await run(f'gcc {sol_file} -o {sol_without_ext} -O2')
         # print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
         if comp != 0:
-            return [f'Compile error: {stderr}'], 0
+            return {'result': 'Compile error', 'stderr': stderr}, 0
     elif lang == 'Java':
         comp, stdout, stderr = await run(f'javac {sol_file} -d {program_dir}')
         print(f'Compile done\nstdout:\n{stdout}\nstderr:\n{stderr}\n{comp}')
@@ -69,31 +68,27 @@ async def grade_problem(problem_id, lang, request_id):
             return {'result': 'Compile error', 'stderr': stderr}, 0
 
     result = []
-    marks = 0
     for i in range(problem.test_cases):
-        input_file = os.path.join(
-            problems.problem_list[problem_id].testcase_dir, f'{i + 1}.in')
-        answer_file = os.path.join(
-            problems.problem_list[problem_id].testcase_dir, f'{i + 1}.out')
+        input_file = problem.input_file(i)
+        answer_file = problem.output_file(i)
         output_file = os.path.join(
-            program_dir, f'output_{request_id}_{i + 1}.out')
+            program_dir, f'output_{i}.out')
 
         code, stdout, stderr, runtime = await grade_case(program_dir, input_file, output_file, lang)
 
         if code == None:
-            result.append({'result': 'Time Limit Exceeded', 'time': runtime})
+            result.append({'result': 'T', 'time': runtime})
         elif code != 0:
-            # print(code, stdout, stderr)
-            result.append({'result': 'Runtime error', 'time': runtime})
+            print(code, stdout, stderr)
+            result.append({'result': '!', 'time': runtime})
         else:
             diff, _, _ = await run(f'diff -w {answer_file} {output_file}')
             if diff != 0:
-                result.append({'result': 'Wrong answer', 'time': runtime})
+                result.append({'result': 'W', 'time': runtime})
             else:
-                result.append({'result': 'Correct', 'time': runtime})
-                marks += 1
+                result.append({'result': 'C', 'time': runtime})
 
-    return result, marks / problem.test_cases
+    return result
 
 
 def detect_lang(filename):

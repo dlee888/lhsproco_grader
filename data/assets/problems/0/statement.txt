@@ -1,6 +1,0 @@
-Add Numbers
-Given two numbers $a$ and $b$, find $a+b$
-Input format:
-The first line contains 2 numbers, $a$ and $b$
-Output format:
-One number, the value of $a+b$
