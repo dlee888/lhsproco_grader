@@ -30,4 +30,4 @@ TIME_LIMITS = {
     'C': 2,
     'Java': 3
 }
-MEMORY_LIMIT = 1024 * 1024 * 512
+MEMORY_LIMIT = 1024 * 1024 * 256  # 256 MB

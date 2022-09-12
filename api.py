@@ -6,7 +6,7 @@ import grading
 import constants
 import problems
 
-api = fastapi.FastAPI()
+app = fastapi.FastAPI()
 
 def setup():
 	problems.load_all()
@@ -17,7 +17,7 @@ def setup():
 request_id = 0
 
 
-@api.post('/grade/{problem_id}')
+@app.post('/grade/{problem_id}')
 async def grade(request: fastapi.Request, problem_id: int, lang: str = fastapi.Form(...), file: typing.Optional[fastapi.UploadFile] = fastapi.File(...)):
     if lang not in constants.SUPPORTED_LANGS:
         return {'error': 'Unsupported language'}

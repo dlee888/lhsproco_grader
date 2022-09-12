@@ -40,7 +40,7 @@ async def grade_case(program_dir, input_file, output_file, lang):
     elif lang == 'Python':
         return await time_cmd(f'python {program_dir}/main.py < {input_file} > {output_file}', constants.TIME_LIMITS[lang], preexec_fn=limit_virtual_memory)
     elif lang == 'Java':
-        return await time_cmd(f'java -Xmx512m -cp {program_dir} Main < {input_file} > {output_file}', constants.TIME_LIMITS[lang])
+        return await time_cmd(f'java -Xmx{constants.MEMORY_LIMIT} -cp {program_dir} Main < {input_file} > {output_file}', constants.TIME_LIMITS[lang])
 
 
 async def grade_problem(problem_id, lang, request_id):
