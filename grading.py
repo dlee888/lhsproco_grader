@@ -8,11 +8,13 @@ import problems
 
 
 def limit_virtual_memory():
+    '''Limit virtual memory to 256 MB'''
     resource.setrlimit(resource.RLIMIT_AS,
                        (constants.MEMORY_LIMIT, constants.MEMORY_LIMIT))
 
 
-async def run(cmd, **kwargs):
+async def run(cmd: str, **kwargs):
+    '''Run a command and return the return code, stdout, and stderr'''
     proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE,
                                                  stderr=asyncio.subprocess.PIPE, **kwargs)
 
@@ -24,11 +26,15 @@ async def run(cmd, **kwargs):
     return proc.returncode, stdout, stderr
 
 
-async def time_cmd(cmd, time_limit, **kwargs):
+async def time_cmd(cmd: str, time_limit: float, **kwargs):
+    '''
+    Run a command and return the return code, stdout, stderr, and time taken
+    If the command takes longer than time_limit, it will stop the command
+    '''
     # print('Timing', cmd)
     try:
         proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE,
-                                                    stderr=asyncio.subprocess.PIPE, **kwargs)
+                                                     stderr=asyncio.subprocess.PIPE, **kwargs)
 
         starttime = time.time()
         stdout, stderr = await asyncio.wait_for(proc.communicate(), time_limit)
@@ -40,16 +46,20 @@ async def time_cmd(cmd, time_limit, **kwargs):
         return None, None, None, time_limit
 
 
-async def grade_case(program_dir, input_file, output_file, lang):
+async def grade_case(program_dir: str, input_file: str, output_file: str, lang: str):
+    '''Grade a single test case'''
     if lang == 'C++' or lang == 'C':
         return await time_cmd(f'./{program_dir}/main < {input_file} > {output_file}', constants.TIME_LIMITS[lang], preexec_fn=limit_virtual_memory)
     elif lang == 'Python':
         return await time_cmd(f'python {program_dir}/main.py < {input_file} > {output_file}', constants.TIME_LIMITS[lang], preexec_fn=limit_virtual_memory)
     elif lang == 'Java':
         return await time_cmd(f'java -Xmx{constants.MEMORY_LIMIT} -cp {program_dir} Main < {input_file} > {output_file}', constants.TIME_LIMITS[lang])
+    else:
+        raise Exception('Unsupported language')
 
 
-async def grade_problem(program, event_id, problem_id, lang):
+async def grade_problem(program: str, event_id: str, problem_id: int, lang: str):
+    '''Grades all test cases for a problem. Returns a list of the results for each case'''
     problem = problems.events_list[event_id].get_problem(problem_id)
     program_dir = os.path.join(constants.TEMP_DIR, program)
     sol_file = os.path.join(
@@ -95,9 +105,3 @@ async def grade_problem(program, event_id, problem_id, lang):
                 result.append({'result': 'C', 'time': runtime})
 
     return result
-
-
-def detect_lang(filename):
-    for lang in constants.SUPPORTED_LANGS:
-        if filename.endswith(constants.LANG_EXTENSIONS[lang]):
-            return lang

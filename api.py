@@ -21,6 +21,12 @@ def setup():
 
 @app.post('/grading/{event_id}/{problem_id}')
 async def grade(request: fastapi.Request, event_id: str, problem_id: int, lang: str = fastapi.Form(...), file: typing.Optional[fastapi.UploadFile] = fastapi.File(...)):
+    '''Grades a submission
+    :param event_id: The event id
+    :param problem_id: The problem number
+    :param lang: The language of the submission
+    :param file: The submission file
+    '''
     if lang not in constants.SUPPORTED_LANGS:
         return {'error': 'Unsupported language'}
     if event_id not in problems.events_list.keys():
@@ -42,11 +48,18 @@ async def grade(request: fastapi.Request, event_id: str, problem_id: int, lang: 
 
 @app.get('/ping')
 async def ping():
+    '''Pings the server'''
     return {'pong': True}
 
 
 @app.post('/problems/upload/{event_id}/{problem_id}')
 async def upload_problem(event_id: str, problem_id: int, file: typing.Optional[fastapi.UploadFile] = fastapi.File(...)):
+    '''
+    Uploads a problem to the server
+    :param event_id: The event id
+    :param problem_id: The problem number
+    :param file: The problem file (a zip file with the test cases)
+    '''
     if event_id not in problems.events_list.keys():
         return {'error': 'Invalid event id'}
     if file is None:
