@@ -27,9 +27,15 @@ async def run(cmd, **kwargs):
 async def time_cmd(cmd, time_limit, **kwargs):
     # print('Timing', cmd)
     try:
+        proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE,
+                                                    stderr=asyncio.subprocess.PIPE, **kwargs)
+
         starttime = time.time()
-        code, stdout, stderr = await asyncio.wait_for(run(cmd, **kwargs), timeout=time_limit)
-        return code, stdout, stderr, time.time() - starttime
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), time_limit)
+        total_time = time.time() - starttime
+        stdout = str(stdout, 'utf-8')
+        stderr = str(stderr, 'utf-8')
+        return proc.returncode, stdout, stderr, total_time
     except asyncio.TimeoutError:
         return None, None, None, time_limit
 

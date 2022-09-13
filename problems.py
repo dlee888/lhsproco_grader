@@ -44,5 +44,7 @@ def load_event(dir):
 
 
 def load_all():
+    global events_list
+    events_list = {}
     for event in os.listdir(constants.PROBLEMS_DIR):
         events_list[event] = load_event(event)

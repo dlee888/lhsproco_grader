@@ -10,6 +10,11 @@ def send_solution(filename, lang, url):
         return post(url, data={'lang': lang}, files={'file': f})
 
 
+def send_problem(filename, url):
+    with open(filename, 'rb') as f:
+        return post(url, files={'file': f})
+
+
 tests = [
     {
         'filename': 'add.c',
@@ -121,8 +126,19 @@ tests = [
     }
 ]
 
+test1 = [
+    {
+        'filename': 'david_prob3_plat.cpp',
+        'lang': 'C++',
+        'expected': [
+            "C"
+        ] * 22
+    }
+]
+
 
 def main():
+    print('Testing grading system...')
     url = 'http://localhost:6969/grading/testeventid/0'
     for test in tests:
         print("Testing {}...".format(test['filename']))
@@ -133,7 +149,32 @@ def main():
         for i, expected in enumerate(test['expected']):
             assert r.json()[
                 i]['result'] == expected, f"Test {i} failed: expected {expected}, got {r.json()[i]['result']}"
+    print('All tests passed')
+    print('-------------------------------')
+    print('Testing problem upload...')
+    files = ['prob3_platinum_open22.zip']
+    url = 'http://localhost:6969/problems/upload/testeventid/1'
+    for file in files:
+        print(f"Testing {file}...")
+        r = send_problem(file, url)
+        print(r)
+        assert r.status_code == 200, "Status code is not 200"
+        print(r.json())
         print("Test passed")
+    print('All tests passed')
+    print('-------------------------------')
+    print('Testing uploaded problem...')
+    url = 'http://localhost:6969/grading/testeventid/1'
+    for test in test1:
+        print("Testing {}...".format(test['filename']))
+        r = send_solution(test['filename'], test['lang'], url)
+        print(r)
+        assert r.status_code == 200, "Status code is not 200"
+        print(r.json())
+        for i, expected in enumerate(test['expected']):
+            assert r.json()[
+                i]['result'] == expected, f"Test {i} failed: expected {expected}, got {r.json()[i]['result']}"
+        print('All tests passed')
 
 
 if __name__ == '__main__':
