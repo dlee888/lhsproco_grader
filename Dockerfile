@@ -30,4 +30,4 @@ USER appuser
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "6969"]
 
-# To test locally, run `docker build -t api .` and then `docker run -p 6969:6969 api`
+# To test locally, run `docker build -t api .` and then `docker run -p 6969:6969 --env-file=<PATH_TO_YOUR_ENVIRONMENT_FILE> api`

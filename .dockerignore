@@ -1,5 +1,5 @@
 **/__pycache__
-**/.venv
+**/*venv*
 **/.classpath
 **/.dockerignore
 **/.env
@@ -25,3 +25,4 @@
 **/values.dev.yaml
 README.md
 tests
+data/
