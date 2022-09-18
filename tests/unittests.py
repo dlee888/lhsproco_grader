@@ -138,6 +138,18 @@ test1 = [
 
 
 def main():
+    print('Testing problem upload...')
+    files = ['prob3_platinum_open22.zip', 'test_addition.zip']
+    url = 'http://localhost:6969/problems/upload/testeventid/1'
+    for file in files:
+        print(f"Testing {file}...")
+        r = send_problem(file, url)
+        print(r)
+        assert r.status_code == 200, "Status code is not 200"
+        print(r.json())
+        print("Test passed")
+    print('All tests passed')
+    print('-------------------------------')
     print('Testing grading system...')
     url = 'http://localhost:6969/grading/testeventid/0'
     for test in tests:
@@ -149,18 +161,6 @@ def main():
         for i, expected in enumerate(test['expected']):
             assert r.json()[
                 i]['result'] == expected, f"Test {i} failed: expected {expected}, got {r.json()[i]['result']}"
-    print('All tests passed')
-    print('-------------------------------')
-    print('Testing problem upload...')
-    files = ['prob3_platinum_open22.zip']
-    url = 'http://localhost:6969/problems/upload/testeventid/1'
-    for file in files:
-        print(f"Testing {file}...")
-        r = send_problem(file, url)
-        print(r)
-        assert r.status_code == 200, "Status code is not 200"
-        print(r.json())
-        print("Test passed")
     print('All tests passed')
     print('-------------------------------')
     print('Testing uploaded problem...')
