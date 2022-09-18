@@ -60,6 +60,7 @@ async def grade_case(program_dir: str, input_file: str, output_file: str, lang: 
 
 async def grade_problem(program: str, event_id: str, problem_id: int, lang: str):
     '''Grades all test cases for a problem. Returns a list of the results for each case'''
+	# TODO: prevent hacking
     problem = problems.events_list[event_id].get_problem(problem_id)
     program_dir = os.path.join(constants.TEMP_DIR, program)
     sol_file = os.path.join(
