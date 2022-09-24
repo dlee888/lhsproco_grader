@@ -139,11 +139,11 @@ test1 = [
 
 def main():
     print('Testing problem upload...')
-    files = ['prob3_platinum_open22.zip', 'test_addition.zip']
-    url = 'http://localhost:6969/problems/upload/testeventid/1'
-    for file in files:
+    files = ['test_addition.zip', 'prob3_platinum_open22.zip']
+    for i, file in enumerate(files):
         print(f"Testing {file}...")
-        r = send_problem(file, url)
+        r = send_problem(
+            file, f'http://localhost:6969/problems/upload/testeventid/{i}')
         print(r)
         assert r.status_code == 200, "Status code is not 200"
         print(r.json())
