@@ -27,6 +27,17 @@ def upload_folder(folder_name: str):
             upload_file(os.path.join(root, file))
 
 
+def delete_file(file_name: str):
+    '''Delete file from s3'''
+    bucket.delete_objects(Delete={'Objects': [{'Key': file_name}]})
+
+
+def delete_folder(folder_name: str):
+    '''Delete folder from s3'''
+    for obj in bucket.objects.filter(Prefix=folder_name):
+        delete_file(obj.key)
+
+
 def download_folder(folder_name: str):
     '''Download folder from s3'''
     for obj in bucket.objects.filter(Prefix=folder_name):

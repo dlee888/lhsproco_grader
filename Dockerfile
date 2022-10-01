@@ -18,6 +18,7 @@ RUN apt-get update
 RUN apt-get install -y build-essential
 RUN apt-get install -y default-jre
 RUN apt-get install -y default-jdk
+RUN apt-get install -y zip unzip
 
 WORKDIR /app
 COPY . /app

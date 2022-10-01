@@ -76,7 +76,26 @@ async def upload_problem(event_id: str, problem_id: int, file: typing.Optional[f
                 event_id, str(problem_id)))
     os.system(
         f'unzip {file_path} -d {os.path.join(constants.PROBLEMS_DIR, event_id, str(problem_id))}')
+    aws.delete_folder(os.path.join(
+        constants.PROBLEMS_DIR, event_id, str(problem_id)))
     aws.upload_folder(os.path.join(
+        constants.PROBLEMS_DIR, event_id, str(problem_id)))
+    problems.load_all()
+    return {'success': True}
+
+
+@app.delete('/problems/delete/{event_id}/{problem_id}')
+async def delete_problem(event_id: str, problem_id: int):
+    '''
+    Deletes a problem from the server
+    :param event_id: The event id
+    :param problem_id: The problem number
+    '''
+    if event_id not in problems.events_list.keys():
+        return {'error': 'Invalid event id'}
+    shutil.rmtree(os.path.join(
+        constants.PROBLEMS_DIR, event_id, str(problem_id)))
+    aws.delete_folder(os.path.join(
         constants.PROBLEMS_DIR, event_id, str(problem_id)))
     problems.load_all()
     return {'success': True}

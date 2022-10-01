@@ -158,6 +158,7 @@ def main():
         print(r)
         assert r.status_code == 200, "Status code is not 200"
         print(r.json())
+        assert len(r.json()) == len(test['expected']), "Wrong number of test cases"
         for i, expected in enumerate(test['expected']):
             assert r.json()[
                 i]['result'] == expected, f"Test {i} failed: expected {expected}, got {r.json()[i]['result']}"
