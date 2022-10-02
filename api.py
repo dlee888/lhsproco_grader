@@ -8,9 +8,20 @@ import aws
 import grading
 import constants
 import problems
+from fastapi.middleware.cors import CORSMiddleware
 
 app = fastapi.FastAPI()
 
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def setup():
     aws.sync_all()
@@ -60,8 +71,7 @@ async def upload_problem(event_id: str, problem_id: int, file: typing.Optional[f
     :param problem_id: The problem number
     :param file: The problem file (a zip file with the test cases)
     '''
-    if event_id not in problems.events_list.keys():
-        return {'error': 'Invalid event id'}
+
     if file is None:
         return {'error': 'No file uploaded'}
     # Save file to disk
@@ -79,6 +89,26 @@ async def upload_problem(event_id: str, problem_id: int, file: typing.Optional[f
     aws.delete_folder(os.path.join(
         constants.PROBLEMS_DIR, event_id, str(problem_id)))
     aws.upload_folder(os.path.join(
+        constants.PROBLEMS_DIR, event_id, str(problem_id)))
+    problems.load_all()
+
+    return {'success': True, 'test_case_num': len(os.listdir(os.path.join(
+        constants.PROBLEMS_DIR, event_id, str(problem_id))))}
+
+
+@app.delete('/problems/delete/{event_id}/{problem_id}')
+async def delete_problem(event_id: str, problem_id: int):
+    '''
+    Deletes a problem from the server
+    :param event_id: The event id
+    :param problem_id: The problem number
+    '''
+    if event_id not in problems.events_list.keys():
+        print("dank")
+        return {'error': 'Invalid event id'}
+    shutil.rmtree(os.path.join(
+        constants.PROBLEMS_DIR, event_id, str(problem_id)))
+    aws.delete_folder(os.path.join(
         constants.PROBLEMS_DIR, event_id, str(problem_id)))
     problems.load_all()
     return {'success': True}
