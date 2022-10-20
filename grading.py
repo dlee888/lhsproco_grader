@@ -1,6 +1,7 @@
 import asyncio
 import os
 import resource
+import signal
 import time
 
 import constants
@@ -34,7 +35,7 @@ async def time_cmd(cmd: str, time_limit: float, **kwargs):
     # print('Timing', cmd)
     try:
         proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE,
-                                                     stderr=asyncio.subprocess.PIPE, **kwargs)
+                                                     stderr=asyncio.subprocess.PIPE, start_new_session=True, **kwargs)
 
         starttime = time.time()
         stdout, stderr = await asyncio.wait_for(proc.communicate(), time_limit)
@@ -43,6 +44,7 @@ async def time_cmd(cmd: str, time_limit: float, **kwargs):
         stderr = str(stderr, 'utf-8')
         return proc.returncode, stdout, stderr, total_time
     except asyncio.TimeoutError:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         return None, None, None, time_limit
 
 
